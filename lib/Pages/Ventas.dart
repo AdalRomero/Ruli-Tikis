@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Colores.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/appBar.dart';
 
-class Home extends StatefulWidget {
-  const Home({super.key});
+class Ventas extends StatefulWidget {
+  const Ventas({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<Ventas> createState() => _VentasState();
 }
 
 final c = Colores();
 
-class _HomeState extends State<Home> {
+class _VentasState extends State<Ventas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

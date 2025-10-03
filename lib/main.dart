@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:the_man_who_sold_the_world/Pages/Home.dart';
+import 'package:the_man_who_sold_the_world/Plugins/navegacion._controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializa la conexión con tu proyecto Supabase
   await initializeSupabase();
-  runApp(const MainApp());
+
+  runApp(const Configuration());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
-    );
-  }
-}
-
+// Función para inicializar Supabase
 Future<void> initializeSupabase() async {
   try {
     await Supabase.initialize(
@@ -30,5 +23,28 @@ Future<void> initializeSupabase() async {
     print("Conexión con Supabase inicializada");
   } catch (e) {
     print(e);
+  }
+}
+
+//Configuracion de la aplicacion
+class Configuration extends StatelessWidget {
+  const Configuration({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget app = MaterialApp(
+      title: 'Man Who Sold The World',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'Poppins',
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const NavigationController(),
+      routes: {'/home': (context) => const Home()},
+    );
+
+    // Solo para desarrollo: fuerza el tamaño de la pantalla
+    return Center(child: SizedBox(width: 480, height: 1600, child: app));
   }
 }
