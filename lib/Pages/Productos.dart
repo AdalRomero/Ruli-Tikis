@@ -6,7 +6,7 @@ import 'package:the_man_who_sold_the_world/Pages/Clientes.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Colores.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/Containers.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/appBar.dart';
-import 'package:the_man_who_sold_the_world/Plugins/Widgets/image.dart';
+import 'package:the_man_who_sold_the_world/Plugins/image.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/textField.dart';
 
 class Productos extends StatefulWidget {
@@ -32,6 +32,13 @@ final c = Colores();
 bool buttonPressed = false;
 
 class _ProductosState extends State<Productos> {
+  @override
+  void initState() {
+    super.initState();
+    ProductosDatos.current.cargarProductos();
+    ProductosDatos.current.escucharCambios();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,20 +245,29 @@ class _ProductosState extends State<Productos> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       if (verificaciones()) {
-                                        setState(() {
-                                          ProductosDatos.current
-                                              .agregarProducto({
-                                                'nombre': nombre.text,
-                                                'categoria': categoria.text,
-                                                'cantidad': cantidad.text,
-                                                'precio': precio.text,
-                                                'imagenBytes': _selectedImage,
-                                              });
-                                          clearFields();
-                                        });
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) => const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+
+                                        await ProductosDatos.current
+                                            .agregarProducto({
+                                              'nombre': nombre.text,
+                                              'categoria': categoria.text,
+                                              'cantidad': cantidad.text,
+                                              'precio': precio.text,
+                                              'imagenBytes': _selectedImage,
+                                            });
+                                        clearFields();
                                       }
+
+                                      clearFields();
+                                      Navigator.pop(context);
                                     },
                                     child: Text(
                                       'Guardar',
@@ -306,7 +322,6 @@ class _ProductosState extends State<Productos> {
                               },
                             ),
                           ],
-                          SizedBox(height: 10),
                           if (ProductosDatos.current.productos.isEmpty) ...[
                             Text(
                               "No hay Productos registrados.",
@@ -393,15 +408,8 @@ class _ProductosState extends State<Productos> {
                                               color: c.danger,
                                             ),
                                             onPressed: () {
-                                              final originalIndex =
-                                                  ProductosDatos
-                                                      .current
-                                                      .productos
-                                                      .indexOf(producto);
                                               ProductosDatos.current
-                                                  .eliminarProducto(
-                                                    originalIndex,
-                                                  );
+                                                  .eliminarProducto(index);
                                               setState(() {});
                                             },
                                           ),

@@ -33,6 +33,8 @@ class _ClientesState extends State<Clientes> {
   @override
   void initState() {
     super.initState();
+    Clientesdatos.current.cargarClientes();
+    Clientesdatos.current.escucharCambios();
   }
 
   @override
@@ -225,20 +227,32 @@ class _ClientesState extends State<Clientes> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       if (verificaciones()) {
-                                        setState(() {
-                                          Clientesdatos.current.agregarCliente({
-                                            'nombre': nombre.text,
-                                            'ciudad': ciudad.text,
-                                            'edad': edad.text,
-                                            'sexo': sexo.text,
-                                          });
-                                          print(Clientesdatos.current.clientes);
-                                          clearFields();
-                                        });
+                                        // Mostrar indicador
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) => const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+
+                                        await Clientesdatos.current
+                                            .agregarCliente({
+                                              'nombre': nombre.text,
+                                              'ciudad': ciudad.text,
+                                              'edad': int.parse(edad.text),
+                                              'sexo': sexo.text,
+                                            });
+
+                                        // Cerrar loading
+                                        Navigator.pop(context);
+
+                                        clearFields();
                                       }
                                     },
+
                                     child: Text(
                                       'Guardar',
                                       style: TextStyle(
@@ -372,12 +386,9 @@ class _ClientesState extends State<Clientes> {
                                               color: c.danger,
                                             ),
                                             onPressed: () {
-                                              final originalIndex =
-                                                  Clientesdatos.current.clientes
-                                                      .indexOf(cliente);
                                               Clientesdatos.current
                                                   .eliminarCliente(
-                                                    originalIndex,
+                                                    cliente['id_clientes'],
                                                   );
                                               setState(() {});
                                             },
@@ -532,7 +543,7 @@ class _ClientesState extends State<Clientes> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       nombreEdit.text = cliente['nombre'] ?? '';
       ciudadEdit.text = cliente['ciudad'] ?? '';
-      edadEdit.text = cliente['edad'] ?? '';
+      edadEdit.text = (cliente['edad'] ?? '').toString();
       sexoEdit.text = cliente['sexo'] ?? '';
       selectedSexoEdit = sexoEdit.text;
     });
@@ -657,16 +668,13 @@ class _ClientesState extends State<Clientes> {
                       onPressed: () {
                         if (verificacionesEdit()) {
                           setState(() {
-                            Clientesdatos.current.actualizarCliente(
-                              index, // 🔹 índice del cliente a editar
-                              {
-                                'nombre': nombreEdit.text,
-                                'ciudad': ciudadEdit.text,
-                                'edad': edadEdit.text,
-                                'sexo': sexoEdit.text,
-                              },
-                            );
-                            print(Clientesdatos.current.clientes);
+                            Clientesdatos.current
+                                .actualizarCliente(cliente['id_clientes'], {
+                                  'nombre': nombreEdit.text,
+                                  'ciudad': ciudadEdit.text,
+                                  'edad': int.parse(edadEdit.text),
+                                  'sexo': sexoEdit.text,
+                                });
 
                             clearFieldsEdit();
                             Navigator.pop(context); // cerrar modal al guardar

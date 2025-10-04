@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+final supabase = Supabase.instance.client;
 
 class Clientesdatos extends ChangeNotifier {
   static final Clientesdatos current = Clientesdatos();
+
   List<Map<String, dynamic>> clientes = [];
   String _filtro = '';
 
@@ -12,35 +16,75 @@ class Clientesdatos extends ChangeNotifier {
   }
 
   List<Map<String, dynamic>> get clientesFiltrados {
-    if (_filtro.isEmpty) return clientes;
+    final activos = clientes.where((c) => c['eliminado'] != true).toList();
+    if (_filtro.isEmpty) return activos;
 
-    return clientes.where((clienteFiltro) {
-      final nombre = clienteFiltro['nombre']?.toLowerCase() ?? '';
-      final ciudad = clienteFiltro['ciudad']?.toLowerCase() ?? '';
-      final edad = clienteFiltro['edad']?.toString() ?? '';
-      final sexo = clienteFiltro['sexo']?.toLowerCase() ?? '';
-
-      final query = _filtro.toLowerCase();
-
-      return nombre.contains(query) ||
-          ciudad.contains(query) ||
-          edad.contains(query) ||
-          sexo.contains(query);
+    final query = _filtro.toLowerCase();
+    return activos.where((c) {
+      return (c['nombre'] ?? '').toLowerCase().contains(query) ||
+          (c['ciudad'] ?? '').toLowerCase().contains(query) ||
+          (c['edad']?.toString() ?? '').contains(query) ||
+          (c['sexo'] ?? '').toLowerCase().contains(query);
     }).toList();
   }
 
-  void agregarCliente(Map<String, dynamic> cliente) {
-    clientes.add(cliente);
+  // 🔹 Cargar clientes desde Supabase
+  Future<void> cargarClientes() async {
+    final response = await supabase.from('Clientes').select();
+    // Filtrar eliminados al cargar
+    clientes = List<Map<String, dynamic>>.from(response);
     notifyListeners();
   }
 
-  void eliminarCliente(int index) {
-    clientes.removeAt(index);
+  // 🔹 Agregar cliente
+  Future<void> agregarCliente(Map<String, dynamic> cliente) async {
+    cliente['eliminado'] = false; // Por defecto activo
+    final response = await supabase.from('Clientes').insert(cliente).select();
+    if (response.isNotEmpty) {
+      clientes.add(response.first);
+      notifyListeners();
+    }
+  }
+
+  // 🔹 Eliminar cliente (borrado lógico)
+  Future<void> eliminarCliente(int id) async {
+    await supabase
+        .from('Clientes')
+        .update({'eliminado': true})
+        .eq('id_clientes', id);
+    // Solo remover de la lista activa
+    clientes.removeWhere((c) => c['id_clientes'] == id);
     notifyListeners();
   }
 
-  void actualizarCliente(int index, Map<String, dynamic> cliente) {
-    clientes[index] = cliente;
-    notifyListeners();
+  // 🔹 Actualizar cliente
+  Future<void> actualizarCliente(int id, Map<String, dynamic> cliente) async {
+    final response = await supabase
+        .from('Clientes')
+        .update(cliente)
+        .eq('id_clientes', id)
+        .select();
+    if (response.isNotEmpty) {
+      final index = clientes.indexWhere((c) => c['id_clientes'] == id);
+      if (index != -1) {
+        clientes[index] = response.first;
+        notifyListeners();
+      }
+    }
+  }
+
+  void escucharCambios() {
+    supabase
+        .channel('public:Clientes')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'Clientes',
+          callback: (payload) async {
+            print('Cambio detectado: $payload');
+            await cargarClientes();
+          },
+        )
+        .subscribe();
   }
 }
