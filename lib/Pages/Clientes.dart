@@ -231,8 +231,7 @@ class _ClientesState extends State<Clientes> {
                                           Clientesdatos.current.agregarCliente({
                                             'nombre': nombre.text,
                                             'ciudad': ciudad.text,
-                                            'edad': edad
-                                                .text, // aquí todavía es String, si quieres puedes guardarlo como int
+                                            'edad': edad.text,
                                             'sexo': sexo.text,
                                           });
                                           print(Clientesdatos.current.clientes);
@@ -261,7 +260,7 @@ class _ClientesState extends State<Clientes> {
 
                 CustomContainer(
                   width: double.infinity,
-                  height: Altura(
+                  height: altura(
                     Clientesdatos.current.clientes.isEmpty,
                   ).toDouble(),
                   child: Padding(
@@ -287,27 +286,9 @@ class _ClientesState extends State<Clientes> {
                               hint: 'Nombre, ciudad, edad...',
                               prefixIcon: Icons.search,
                               onChanged: (value) {
-                                /*setState(() {
-                                  final query = value.toLowerCase();
-                                  clientesFiltrados = Clientesdatos
-                                      .current
-                                      .clientes
-                                      .where((cliente) {
-                                        final nombre = (cliente['nombre'] ?? '')
-                                            .toLowerCase();
-                                        final ciudad = (cliente['ciudad'] ?? '')
-                                            .toLowerCase();
-                                        final edad = (cliente['edad'] ?? '')
-                                            .toLowerCase();
-                                        final sexo = (cliente['sexo'] ?? '')
-                                            .toLowerCase();
-                                        return nombre.contains(query) ||
-                                            ciudad.contains(query) ||
-                                            edad.contains(query) ||
-                                            sexo.contains(query);
-                                      })
-                                      .toList();
-                                });*/
+                                setState(() {
+                                  Clientesdatos.current.filtro = value;
+                                });
                               },
                             ),
                           ],
@@ -318,41 +299,50 @@ class _ClientesState extends State<Clientes> {
                               style: TextStyle(color: c.textSecondary),
                             ),
                           ] else ...[
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: Clientesdatos.current.clientes.length,
-                              itemBuilder: (context, index) {
-                                final cliente =
-                                    Clientesdatos.current.clientes[index];
-                                return ListTile(
-                                  leading: Icon(
-                                    Icons.person,
-                                    color: c.textPrimary,
-                                  ),
-                                  title: Text(
-                                    cliente['nombre'] ?? '',
-                                    style: TextStyle(color: c.textPrimary),
-                                  ),
-                                  subtitle: Text(
-                                    'Ciudad: ${cliente['ciudad']}, Edad: ${cliente['edad']}, Sexo: ${cliente['sexo']}',
-                                    style: TextStyle(color: c.textSecondary),
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.edit,
-                                          color: c.warning,
+                            AnimatedBuilder(
+                              animation: Clientesdatos.current,
+                              builder: (__, _) {
+                                return ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemCount: Clientesdatos
+                                      .current
+                                      .clientesFiltrados
+                                      .length,
+                                  itemBuilder: (context, index) {
+                                    final cliente = Clientesdatos
+                                        .current
+                                        .clientesFiltrados[index];
+                                    return ListTile(
+                                      leading: Icon(
+                                        Icons.person,
+                                        color: c.textPrimary,
+                                      ),
+                                      title: Text(
+                                        cliente['nombre'] ?? '',
+                                        style: TextStyle(color: c.textPrimary),
+                                      ),
+                                      subtitle: Text(
+                                        'Ciudad: ${cliente['ciudad']}, Edad: ${cliente['edad']}, Sexo: ${cliente['sexo']}',
+                                        style: TextStyle(
+                                          color: c.textSecondary,
                                         ),
-                                        onPressed: () {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: c.backgroundDark,
-                                            builder: (context) =>
-                                                FractionallySizedBox(
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.edit,
+                                              color: c.warning,
+                                            ),
+                                            onPressed: () {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor:
+                                                    c.backgroundDark,
+                                                builder: (context) => FractionallySizedBox(
                                                   heightFactor: 0.8,
                                                   child: Container(
                                                     decoration: BoxDecoration(
@@ -369,27 +359,33 @@ class _ClientesState extends State<Clientes> {
                                                       index,
                                                       Clientesdatos
                                                           .current
-                                                          .clientes[index],
+                                                          .clientesFiltrados[index],
                                                     ),
                                                   ),
                                                 ),
-                                          );
-                                        },
+                                              );
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.delete,
+                                              color: c.danger,
+                                            ),
+                                            onPressed: () {
+                                              final originalIndex =
+                                                  Clientesdatos.current.clientes
+                                                      .indexOf(cliente);
+                                              Clientesdatos.current
+                                                  .eliminarCliente(
+                                                    originalIndex,
+                                                  );
+                                              setState(() {});
+                                            },
+                                          ),
+                                        ],
                                       ),
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.delete,
-                                          color: c.danger,
-                                        ),
-                                        onPressed: () {
-                                          Clientesdatos.current.eliminarCliente(
-                                            index,
-                                          );
-                                          print(Clientesdatos.current.clientes);
-                                        },
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 );
                               },
                             ),
@@ -454,11 +450,23 @@ class _ClientesState extends State<Clientes> {
       );
       return false;
     }
+    if (edadInt <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'La edad debe ser mayor a 0.',
+            style: TextStyle(color: c.textPrimary),
+          ),
+          backgroundColor: c.danger,
+        ),
+      );
+      return false;
+    }
 
     return true; // Si pasa todas las validaciones
   }
 
-  int Altura(bool empity) {
+  int altura(bool empity) {
     try {
       if (empity == false) {
         return 450;
@@ -502,6 +510,18 @@ class _ClientesState extends State<Clientes> {
       );
       return false;
     }
+    if (edadInt <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'La edad debe ser mayor a 0.',
+            style: TextStyle(color: c.textPrimary),
+          ),
+          backgroundColor: c.danger,
+        ),
+      );
+      return false;
+    }
 
     return true; // Si pasa todas las validaciones
   }
@@ -514,7 +534,7 @@ class _ClientesState extends State<Clientes> {
       ciudadEdit.text = cliente['ciudad'] ?? '';
       edadEdit.text = cliente['edad'] ?? '';
       sexoEdit.text = cliente['sexo'] ?? '';
-      selectedSexoEdit = cliente['sexo'];
+      selectedSexoEdit = sexoEdit.text;
     });
     return Center(
       child: CustomContainer(
@@ -648,7 +668,7 @@ class _ClientesState extends State<Clientes> {
                             );
                             print(Clientesdatos.current.clientes);
 
-                            clearFields();
+                            clearFieldsEdit();
                             Navigator.pop(context); // cerrar modal al guardar
                           });
                         }

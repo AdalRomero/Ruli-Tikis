@@ -49,6 +49,7 @@ class CustomTextField extends StatelessWidget {
             ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
             : null,
       ),
+      onChanged: onChanged,
     );
   }
 }
