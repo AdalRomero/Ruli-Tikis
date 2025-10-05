@@ -198,7 +198,7 @@ class _ProductosState extends State<Productos> {
                                         label: 'Cantidad',
                                         hint: 'Cantidad de producto',
                                         prefixIcon: Icons.format_list_numbered,
-                                        keyboardType: TextInputType.text,
+                                        keyboardType: TextInputType.number,
                                       ),
                                       CustomTextField(
                                         controller: categoria,
