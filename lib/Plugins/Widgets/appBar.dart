@@ -7,6 +7,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color textColor;
   final Color primaryColor;
   final Color accentColor;
+  final List<Widget>? actions;
 
   const CustomAppBar({
     super.key,
@@ -15,6 +16,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.textColor,
     required this.primaryColor,
     required this.accentColor,
+    this.actions,
   });
 
   @override
@@ -25,6 +27,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 90,
       elevation: 10,
       shadowColor: shadowColor,
+      actions: actions,
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

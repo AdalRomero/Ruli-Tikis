@@ -7,6 +7,7 @@ import 'package:the_man_who_sold_the_world/Plugins/Colores.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/Containers.dart';
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/appBar.dart';
 import 'package:the_man_who_sold_the_world/Plugins/image.dart';
+import 'package:http/http.dart' as http;
 import 'package:the_man_who_sold_the_world/Plugins/Widgets/textField.dart';
 
 class Productos extends StatefulWidget {
@@ -350,10 +351,18 @@ class _ProductosState extends State<Productos> {
                                               height: 50,
                                               fit: BoxFit.cover,
                                             )
-                                          : Icon(
-                                              Icons.inventory,
-                                              color: c.textPrimary,
-                                            ),
+                                          : (producto['img'] != null
+                                                ? Image.network(
+                                                    producto['img'],
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Icon(
+                                                    Icons.inventory,
+                                                    color: c.textPrimary,
+                                                  )),
+
                                       title: Text(
                                         producto['nombre'] ?? '',
                                         style: TextStyle(color: c.textPrimary),
@@ -529,32 +538,49 @@ class _ProductosState extends State<Productos> {
     return true; // Si pasa todas las validaciones
   }
 
+  Future<Uint8List?> _urlToBytes(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) return response.bodyBytes;
+    } catch (e) {
+      print('Error descargando imagen: $e');
+    }
+    return null;
+  }
+
   Widget editar(int index, Map<String, dynamic> producto) {
-    // Inicializamos los controladores y la imagen localmente
+    final c = Colores();
+
+    // Controladores
     final nombreCtrl = TextEditingController(text: producto['nombre'] ?? '');
-    final precioCtrl = TextEditingController(text: producto['precio'] ?? '');
+    final precioCtrl = TextEditingController(
+      text: producto['precio'] != null ? producto['precio'].toString() : '',
+    );
     final cantidadCtrl = TextEditingController(
-      text: producto['cantidad'] ?? '',
+      text: producto['cantidad'] != null ? producto['cantidad'].toString() : '',
     );
     final categoriaCtrl = TextEditingController(
       text: producto['categoria'] ?? '',
     );
-    Uint8List? imagenBytes = producto['imagenBytes'] as Uint8List?;
 
-    final c = Colores();
+    Uint8List? imagenBytes = producto['imagenBytes'] as Uint8List?;
+    final String? imgUrl = producto['img']; // URL de Supabase
 
     return StatefulBuilder(
       builder: (context, setModalState) {
+        // Si no hay bytes pero sí URL, descarga la imagen
+        if (imagenBytes == null && imgUrl != null) {
+          _urlToBytes(imgUrl).then((bytes) {
+            if (bytes != null) setModalState(() => imagenBytes = bytes);
+          });
+        }
+
         void clearFieldsLocal() {
           nombreCtrl.clear();
           precioCtrl.clear();
           cantidadCtrl.clear();
           categoriaCtrl.clear();
-          setState(() {
-            imagenBytes = null;
-          });
-
-          setModalState(() {});
+          setModalState(() => imagenBytes = null);
         }
 
         bool verificacionesLocal() {
@@ -650,8 +676,7 @@ class _ProductosState extends State<Productos> {
                             ),
                             onPressed: () {
                               setModalState(() {
-                                imagenBytes =
-                                    null; // Limpiamos la imagen local del modal
+                                imagenBytes = null;
                               });
                             },
                             label: Text(
@@ -722,10 +747,11 @@ class _ProductosState extends State<Productos> {
                           if (verificacionesLocal()) {
                             ProductosDatos.current.actualizarProducto(index, {
                               'nombre': nombreCtrl.text,
-                              'precio': precioCtrl.text,
-                              'cantidad': cantidadCtrl.text,
+                              'precio': double.tryParse(precioCtrl.text) ?? 0.0,
+                              'cantidad': int.tryParse(cantidadCtrl.text) ?? 0,
                               'categoria': categoriaCtrl.text,
                               'imagenBytes': imagenBytes,
+                              'img': imgUrl, // mantener URL
                             });
                             Navigator.pop(context);
                           }

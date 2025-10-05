@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:the_man_who_sold_the_world/Pages/Home.dart';
+import 'package:the_man_who_sold_the_world/Code/ClientesDatos.dart';
+import 'package:the_man_who_sold_the_world/Code/metricas.dart';
+import 'package:the_man_who_sold_the_world/Pages/Seccion.dart';
 import 'package:the_man_who_sold_the_world/Plugins/navegacion._controller.dart';
+
+import 'package:the_man_who_sold_the_world/Code/ProductosDatos.dart';
+import 'package:the_man_who_sold_the_world/Code/VentasDatos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializa la conexión con tu proyecto Supabase
   await initializeSupabase();
+  await cargarTodosLosDatos(); // 🔹 Precargar datos al inicio
+  await MetricasService.instance.inicializar(); // 🔹 Cargar métricas al inicio
 
   runApp(const Configuration());
 }
@@ -40,11 +47,26 @@ class Configuration extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      home: const NavigationController(),
-      routes: {'/home': (context) => const Home()},
+      home: const InicioSeccion(),
+      routes: {'/home': (context) => const NavigationController()},
     );
 
     // Solo para desarrollo: fuerza el tamaño de la pantalla
     return Center(child: SizedBox(width: 480, height: 1600, child: app));
   }
+}
+
+Future<void> cargarTodosLosDatos() async {
+  await Future.wait([
+    VentaDatos.current.cargarVentas(),
+    ProductosDatos.current.cargarProductos(),
+    Clientesdatos.current.cargarClientes(),
+  ]);
+
+  // Iniciar la escucha de cambios
+  VentaDatos.current.escucharCambios();
+  ProductosDatos.current.escucharCambios();
+  Clientesdatos.current.escucharCambios();
+
+  print('Todos los datos precargados y escuchando cambios en tiempo real');
 }

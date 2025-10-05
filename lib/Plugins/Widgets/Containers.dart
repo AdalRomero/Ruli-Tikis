@@ -7,8 +7,15 @@ class CustomContainer extends StatelessWidget implements PreferredSizeWidget {
   final double? width;
   final double? height;
   final Widget? child;
+  final double borderRadius;
 
-  const CustomContainer({super.key, this.width, this.height, this.child});
+  const CustomContainer({
+    super.key,
+    this.width,
+    this.height,
+    this.child,
+    this.borderRadius = 18,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,7 @@ class CustomContainer extends StatelessWidget implements PreferredSizeWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
 
         boxShadow: [
